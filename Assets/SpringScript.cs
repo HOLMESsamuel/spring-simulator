@@ -18,18 +18,24 @@ public class SpringScript : MonoBehaviour
     public Vector3 origine;
 
     public List<Vector3> stringPoints;
+    public List<Vector3> tracePoints;
 
     public int numberOfTurns;
     public float stringWidth;
     public float maxLength;
-    public float stringLength;
+
+    public float k;
+    public float equilibriumStretch;
 
     public LineRenderer lineRenderer;
+
+    public int traceSize;
+    public float traceStep;
 
     void Start()
     {
         diskRadius = 0.5F;
-        gravity = 0;
+        gravity = 3;
         boundsSize = new Vector2(10, 10);
         collisionDamping = 1.0F;
         mesh = new Mesh();
@@ -37,8 +43,11 @@ public class SpringScript : MonoBehaviour
         stringWidth = 0.1F;
         numberOfTurns = 5;
         maxLength = 10F;
-        stringLength = 5F;
-        origine = Vector3.zero;
+        origine = new Vector3(0, 5, 0);
+        k = 1;
+        equilibriumStretch = diskRadius * gravity / k;
+        traceSize = 100;
+        traceStep = 0.1F;
     }
 
     void DrawDisk(float diskRadius, Vector3 position)
@@ -55,22 +64,23 @@ public class SpringScript : MonoBehaviour
         mesh.triangles = polygonTriangles;
     }
 
-    void DrawString(float width, Vector3 startPosition, int numberOfTurns, float length, float maxLength, Vector3 endPosition)
+    void DrawString(float width, Vector3 startPosition, int numberOfTurns, float maxLength, Vector3 endPosition)
     {
         stringPoints = new List<Vector3>();
         stringPoints.Add(startPosition);
-        for(int i=0; i<4*numberOfTurns; i++)
+        float length = Vector3.Distance(startPosition, endPosition);
+        for (int i = 0; i < 4 * numberOfTurns; i++)
         {
             if (i % 4 == 0)
             {
-                stringPoints.Add(new Vector3(maxLength * Mathf.Sin(Mathf.Acos(length / maxLength)) / (2 * numberOfTurns), (i + 1) * length / (4 * numberOfTurns), 0));
+                stringPoints.Add(startPosition - new Vector3(maxLength * Mathf.Sin(Mathf.Acos(length / maxLength)) / (2 * numberOfTurns), (i + 1) * length / (4 * numberOfTurns), 0));
 
             } else
             {
-                stringPoints.Add(new Vector3(-1*maxLength * Mathf.Sin(Mathf.Acos(length / maxLength)) / (2 * numberOfTurns), (i + 1) * length / (4 * numberOfTurns), 0));
+                stringPoints.Add(startPosition - new Vector3(-1 * maxLength * Mathf.Sin(Mathf.Acos(length / maxLength)) / (2 * numberOfTurns), (i + 1) * length / (4 * numberOfTurns), 0));
             }
             i++;
-            stringPoints.Add(new Vector3(0, (i + 1) * length / (4 * numberOfTurns), 0));
+            stringPoints.Add(startPosition - new Vector3(0, (i + 1) * length / (4 * numberOfTurns), 0));
         }
         stringPoints.Add(endPosition);
         lineRenderer.positionCount = stringPoints.Count;
@@ -79,19 +89,6 @@ public class SpringScript : MonoBehaviour
         lineRenderer.SetPositions(stringPoints.ToArray());
     }
 
-    void DrawLine(float width)
-    {
-        Vector3 a = new Vector3(0, 0, 0);
-        Vector3 b = new Vector3(0, 1, 0);
-        Vector3 c = new Vector3(1, 0, 0);
-        List<Vector3> positions = new List<Vector3>();
-        positions.Add(a);
-        positions.Add(b);
-        positions.Add(c);
-        lineRenderer.startWidth = width;
-        lineRenderer.endWidth = width;
-        lineRenderer.SetPositions(positions.ToArray());
-    }
     List<Vector3> GetCircumferencePoints(int sides, float radius, Vector3 position)
     {
         List<Vector3> points = new List<Vector3>();
@@ -124,7 +121,7 @@ public class SpringScript : MonoBehaviour
     {
         Vector2 halfBoundSize = boundsSize / 2 - Vector2.one * diskRadius;
 
-        if(Mathf.Abs(position.x) > halfBoundSize.x)
+        if (Mathf.Abs(position.x) > halfBoundSize.x)
         {
             position.x = halfBoundSize.x * Mathf.Sign(position.x);
             velocity.x *= -1 * collisionDamping;
@@ -137,12 +134,50 @@ public class SpringScript : MonoBehaviour
         }
     }
 
-    void Update()
+    Vector2 ApplyGravity(Vector2 velocity)
     {
         velocity += Vector2.down * gravity * Time.deltaTime;
+        return velocity;
+    } 
+
+    Vector2 ApplySpringForce(Vector2 velocity)
+    {
+        float length = Vector3.Distance(origine, position);
+        velocity += (length - equilibriumStretch) * Vector2.up * k * Time.deltaTime;
+        return velocity;
+    }
+
+    void appendTrace(Vector2 tracePoint)
+    {
+        tracePoints.Add(tracePoint);
+        if(tracePoints.Count > traceSize)
+        {
+            tracePoints.RemoveAt(0);
+        }
+        for (int i = 0; i< tracePoints.Count; i++)
+        {
+            tracePoints[i] += new Vector3(-traceStep, 0, 0);
+        }
+    }
+
+    void DrawTrace()
+    {
+        lineRenderer.startWidth = 0.05F;
+        lineRenderer.endWidth = 0.05F;
+        lineRenderer.positionCount = tracePoints.Count;
+        lineRenderer.SetPositions(tracePoints.ToArray());
+    }
+
+    void Update()
+    {
+        equilibriumStretch = diskRadius * gravity / k;
+        velocity = ApplyGravity(velocity);
+        velocity = ApplySpringForce(velocity);
         position += velocity * Time.deltaTime;
         ResolveCollision();
-        DrawDisk(diskRadius, position);
-        DrawString(stringWidth, origine, numberOfTurns, position.y, maxLength, position);
+        DrawDisk(diskRadius, position + new Vector2(diskRadius/2, -diskRadius/2));
+        DrawString(stringWidth, origine, numberOfTurns, maxLength, position);
+        appendTrace(position);
+        DrawTrace();
     }
 }
