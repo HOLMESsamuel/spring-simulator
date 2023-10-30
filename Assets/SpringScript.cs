@@ -18,7 +18,6 @@ public class SpringScript : MonoBehaviour
     public Vector3 origine;
 
     public List<Vector3> stringPoints;
-    public List<Vector3> tracePoints;
 
     public int numberOfTurns;
     public float stringWidth;
@@ -28,9 +27,6 @@ public class SpringScript : MonoBehaviour
     public float equilibriumStretch;
 
     public LineRenderer lineRenderer;
-
-    public int traceSize;
-    public float traceStep;
 
     void Start()
     {
@@ -46,8 +42,11 @@ public class SpringScript : MonoBehaviour
         origine = new Vector3(0, 5, 0);
         k = 1;
         equilibriumStretch = diskRadius * gravity / k;
-        traceSize = 100;
-        traceStep = 0.1F;
+    }
+
+    public Vector2 GetPosition()
+    {
+        return position;
     }
 
     void DrawDisk(float diskRadius, Vector3 position)
@@ -147,26 +146,7 @@ public class SpringScript : MonoBehaviour
         return velocity;
     }
 
-    void appendTrace(Vector2 tracePoint)
-    {
-        tracePoints.Add(tracePoint);
-        if(tracePoints.Count > traceSize)
-        {
-            tracePoints.RemoveAt(0);
-        }
-        for (int i = 0; i< tracePoints.Count; i++)
-        {
-            tracePoints[i] += new Vector3(-traceStep, 0, 0);
-        }
-    }
-
-    void DrawTrace()
-    {
-        lineRenderer.startWidth = 0.05F;
-        lineRenderer.endWidth = 0.05F;
-        lineRenderer.positionCount = tracePoints.Count;
-        lineRenderer.SetPositions(tracePoints.ToArray());
-    }
+    
 
     void Update()
     {
@@ -177,7 +157,5 @@ public class SpringScript : MonoBehaviour
         ResolveCollision();
         DrawDisk(diskRadius, position + new Vector2(diskRadius/2, -diskRadius/2));
         DrawString(stringWidth, origine, numberOfTurns, maxLength, position);
-        appendTrace(position);
-        DrawTrace();
     }
 }
