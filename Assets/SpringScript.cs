@@ -31,7 +31,6 @@ public class SpringScript : MonoBehaviour
     void Start()
     {
         diskRadius = 0.5F;
-        gravity = 3;
         boundsSize = new Vector2(10, 10);
         collisionDamping = 1.0F;
         mesh = new Mesh();
@@ -40,7 +39,6 @@ public class SpringScript : MonoBehaviour
         numberOfTurns = 5;
         maxLength = 10F;
         origine = new Vector3(0, 5, 0);
-        k = 1;
         equilibriumStretch = diskRadius * gravity / k;
     }
 
@@ -150,6 +148,8 @@ public class SpringScript : MonoBehaviour
 
     void Update()
     {
+        k = FindObjectOfType<KSliderController>().GetLocalValue();
+        gravity = FindObjectOfType<GravitySliderController>().GetLocalValue();
         equilibriumStretch = diskRadius * gravity / k;
         velocity = ApplyGravity(velocity);
         velocity = ApplySpringForce(velocity);

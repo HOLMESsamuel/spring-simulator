@@ -17,9 +17,9 @@ public class TraceScript : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        traceSize = 100;
-        traceStep = 0.1F;
-        display = true;
+        traceSize = 1100;
+        traceStep = 0.01F;
+        display = false;
     }
 
     void appendTrace(Vector2 tracePoint)
@@ -46,11 +46,14 @@ public class TraceScript : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        appendTrace(FindObjectOfType<SpringScript>().GetPosition());
         if(display)
         {
-            DrawTrace();
+            appendTrace(FindObjectOfType<SpringScript>().GetPosition());
+        } else
+        {
+            tracePoints = new List<Vector3>();
         }
-        
+        DrawTrace();
+
     }
 }
