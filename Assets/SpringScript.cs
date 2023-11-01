@@ -12,7 +12,6 @@ public class SpringScript : MonoBehaviour
     public float collisionDamping;
     Vector2 position;
     Vector2 velocity;
-    Mesh mesh;
     public Vector3[] polygonPoints;
     public int[] polygonTriangles;
     public Vector3 origine;
@@ -28,13 +27,13 @@ public class SpringScript : MonoBehaviour
 
     public LineRenderer lineRenderer;
 
+    public Vector2 positionDifference = Vector2.zero;
+
     void Start()
     {
         diskRadius = 0.5F;
         boundsSize = new Vector2(10, 10);
         collisionDamping = 1.0F;
-        mesh = new Mesh();
-        this.GetComponent<MeshFilter>().mesh = mesh;
         stringWidth = 0.1F;
         numberOfTurns = 5;
         maxLength = 10F;
@@ -47,19 +46,32 @@ public class SpringScript : MonoBehaviour
         return position;
     }
 
-    void DrawDisk(float diskRadius, Vector3 position)
+    private void OnMouseDown()
     {
-        DrawFilled(50, diskRadius, position);
+        Debug.Log("down");
+        velocity = Vector2.zero;
+        positionDifference = (Vector2)Camera.main.ScreenToWorldPoint(Input.mousePosition) - position;
     }
 
-    void DrawFilled(int sides, float radius, Vector3 position)
+    private void OnMouseDrag()
+    {
+        velocity = Vector2.zero;
+        position = new Vector2(0, ((Vector2)Camera.main.ScreenToWorldPoint(Input.mousePosition) - positionDifference).y);
+    }
+
+    /*void DrawDisk(float diskRadius, Vector3 position)
+    {
+        DrawFilled(50, diskRadius, position);
+    }*/
+
+    /*void DrawFilled(int sides, float radius, Vector3 position)
     {
         polygonPoints = GetCircumferencePoints(sides, radius, position).ToArray();
         polygonTriangles = DrawFilledTriangles(polygonPoints);
         mesh.Clear();
         mesh.vertices = polygonPoints;
         mesh.triangles = polygonTriangles;
-    }
+    }*/
 
     void DrawString(float width, Vector3 startPosition, int numberOfTurns, float maxLength, Vector3 endPosition)
     {
@@ -86,7 +98,7 @@ public class SpringScript : MonoBehaviour
         lineRenderer.SetPositions(stringPoints.ToArray());
     }
 
-    List<Vector3> GetCircumferencePoints(int sides, float radius, Vector3 position)
+    /*List<Vector3> GetCircumferencePoints(int sides, float radius, Vector3 position)
     {
         List<Vector3> points = new List<Vector3>();
         float circumferenceProgressPerStep = (float)1 / sides;
@@ -112,7 +124,7 @@ public class SpringScript : MonoBehaviour
             newTriangles.Add(i + 1);
         }
         return newTriangles.ToArray();
-    }
+    }*/
 
     public void ResolveCollision()
     {
@@ -150,12 +162,13 @@ public class SpringScript : MonoBehaviour
     {
         k = FindObjectOfType<KSliderController>().GetLocalValue();
         gravity = FindObjectOfType<GravitySliderController>().GetLocalValue();
+
         equilibriumStretch = diskRadius * gravity / k;
         velocity = ApplyGravity(velocity);
         velocity = ApplySpringForce(velocity);
         position += velocity * Time.deltaTime;
         ResolveCollision();
-        DrawDisk(diskRadius, position + new Vector2(diskRadius/2, -diskRadius/2));
+        transform.position = position;
         DrawString(stringWidth, origine, numberOfTurns, maxLength, position);
     }
 }

@@ -22,6 +22,11 @@ public class TraceScript : MonoBehaviour
         display = false;
     }
 
+    public void ChangeDisplayState()
+    {
+       display = !display;
+    }
+
     void appendTrace(Vector2 tracePoint)
     {
         tracePoints.Add(tracePoint);
